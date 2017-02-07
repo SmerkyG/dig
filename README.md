@@ -56,7 +56,7 @@ struct Example extends Foo implements Bar {
   }
   
   static fn factorial(x:Int) {
-    if(x==0) return x;
+    if(x<=2) return 2;
     // tail call optimization converts this into a loop, allowing this entire function to be inlined
     return x*factorial(x-1);
   }
