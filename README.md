@@ -91,7 +91,7 @@ struct Example extends Foo implements Bar {
   }
 }
 
-union Choices {
+union Choice {
   Choice1,
   Choice2,
   Choice3 { var value:Int; }
