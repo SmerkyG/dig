@@ -40,9 +40,12 @@ The hope is that Dig will remove the requirement of choosing a language when cho
 * Inefficient abstractions
 * Complex syntax
 * Accidental numeric type conversion
+* Pointless syntactic differences between * and ->, as well as excess pointer/reference type naming like X*, X&, and X&&
 * Templates that may or may not compile properly depending on the type arguments provided
 * Long iteration times due to slow compile speed
-* Having to implement object pooling yourself in order to avoid hiccups in garbage collected environments
+* Having to write your own allocator just to support a large number of objects
+* Having to implement object pooling yourself in order to avoid hiccups in garbage collected environments for large numbers of objects
+* Major tradeoffs between ease of use and efficiency
 
 ## Example code
 
