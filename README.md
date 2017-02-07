@@ -18,6 +18,7 @@ The hope is that Dig will remove the requirement of choosing a language when cho
 * Pattern matching
 * Type generics that compile quickly to efficient output
 * Function generics
+* Partial specialization for both type and function generics
 * Function overloads e.g. foo(i:Int) can coexist with foo(b:Boolean)
 * Function default parameters e.g. foo(i:Int = 4, b:Bar? = null)
 * Member setter/getter functions
