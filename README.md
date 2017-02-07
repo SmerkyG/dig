@@ -127,3 +127,86 @@ static fn choiceTest2(choice:Choice):String {
 }
 
 ```
+
+## Why not just use language X
+
+Here's why we prefer the promise of Dig to each of the following languages:
+
+C#
+----------
+* Requires a large runtime that is not available on all platforms
+* Mono has major drawbacks
+* Poor inlining support
+* Cannot avoid GC
+* GC workarounds are painful to implement/refactor towards
+* Poor/no macro support
+* No support for non-nullable references
+* Difficult interoperability with systems languages and native libraries
+
+C++
+----------
+* No safety guarantees whatsoever
+* Easy to accidentally write to memory you shouldn't, including freed memory regions
+* Cross platform compatibility is possible but difficult and time consuming to implement, test and maintain
+* Lots of things that the compiler could take care of have to be done manually by the programmer, leading to bloated code, reduced safety, and increased refactoring and testing time
+* Easy to accidentally leave memory uninitialized that should have been initialized
+* Hugely varied syntax with excess specifiers and many ways to do the same thing means it's slow to read other people's code (or even your own older code)
+* Missing language features like safe discriminated unions can be emulated but are difficult and error prone
+* Missing language features like extended dispatching and pattern matching
+* Templates are a nightmarish version of Generics that are not even guaranteed to compile for a given set of type parameters
+* Hideous lambda syntax with complex highly error-prone closure cleanup considerations
+* No null safety, not even a standardized way to easily tell if a pointer might be able to be null
+* Slow compile times unless you invest heavily in making your code fit very specific and limiting patterns (Dig emits C++ code that does not suffer from the problems that often lead to slow compilation)
+* Verbose - no null conditional operator (?.) etc
+* Macro system that results in error-prone hard to debug and hard to read code
+* Memory management is slow by default, and requires specialized implementations to be reasonable for large numbers of allocations
+* Difficult interoperability with garbage collected languages
+
+C
+----------
+* No safety guarantees whatsoever
+* Easy to accidentally write to memory you shouldn't, including freed memory regions
+* Cross platform compatibility is possible but difficult and time consuming to implement, test and maintain
+* Lots of things that the compiler could take care of have to be done manually by the programmer, leading to bloated code, reduced safety, and increased refactoring and testing time
+* Easy to accidentally leave memory uninitialized that should have been initialized
+* Missing major modern language features, including major code safety and reuse features like generics and dynamic type checks
+* Extremely simplified type system
+* Verbose
+* Memory management is slow by default, and requires specialized implementations to be reasonable for large numbers of allocations
+* Difficult interoperability with garbage collected languages
+
+Java
+-----------
+* Requires a large runtime that is available on many but not all platforms (such as Game Consoles)
+* Poor inlining support
+* Cannot avoid GC
+* GC workarounds are painful to implement/refactor towards
+* Poor/no macro support
+* No support for non-nullable references
+* Lack of Value-type support leads to heavy dependence on the garbage collector
+* Type-erasure based generics do not allow many of the most desirable uses for generics
+* Slow runtime performance compared to systems languages
+* No multiline strings or string interpolation
+* Verbose - no null conditional operator (?.), no automatic casts based on comparisons, etc
+* Difficult interoperability with systems languages and native libraries
+* Lack of support for static (or non-static) extension methods
+
+Haxe
+-----------
+* C++ target requires a runtime that may not be available on your target platform and may be inappropriate for embedded systems
+* No inlining support for lambdas
+* Cannot avoid GC
+* GC workarounds are painful to implement/refactor towards
+* No support for non-nullable references
+* Lack of cross-target Value-type support leads to heavy dependence on the garbage collector
+* Debugging is unpleasant for anything other than SWF target
+* Slow runtime performance compared to systems languages
+* Same code leads to different results in different target languages (including errors and differently initialized data!)
+* Bugs in desirable core features like @generic
+* Verbose - no null conditional operator (?.), no automatic casts based on comparisons, etc
+* Complex and uninituitive language specification (e.g. method accessibility modifiers, abstracts, getter/setter/underlying value)
+* Iteration mechanism is low performance
+* Slow compile times for C# target
+* Lack of support for function overloading
+* Lack of support for partial specialization for generics
+* Widely varied target implementation quality (e.g. optional function parameters in C#)
