@@ -52,13 +52,17 @@ The hope is that Dig will remove the requirement of choosing a language when cho
 
 ```
 struct Example extends Foo implements Bar {
+  // notice the implicit type of Slice<Int> for someInts
   var someInts = Slice<Int>();
+  
+  // constructor
   fn Example() {
     foreach(Range(0,10)) {
       someInts.push(it);
     }
   }
   
+  // notice the implicit return type of Int
   static fn factorial(x:Int) {
     if(x<=2) return 2;
     // tail call optimization converts this into a loop, allowing this entire function to be inlined
@@ -67,19 +71,22 @@ struct Example extends Foo implements Bar {
 
   // imperatively calculate the sum of the factorials of 1 through 10
   fn imperativeTest() {
+    // notice the implicit type of Int for rv
     var rv=0;
     Range(1,11).foreach {
-      rv=rv+it.factorial;
+      rv+=it.factorial;
     }
     return rv;
   }
 
   // functionally/declaratively calculate the sum of the factorials of 1 through 10
   // because of inlining, this generates the same efficient code as imperativeTest
-  fn functionalTest() Range(1,11).map(factorial).reduce(operator_plus)  
-  
+  fn functionalTest() Range(1,11).map(factorial).reduce(operator_plus)
+
+  // rc means this type is reference-counted
   rc struct InnerRefCounted {
   }
+  // rc means this type is deferred-reference-counted
   defer_rc struct InnerDeferRefCounted {
     var other = InnerRefCounted();
   }
@@ -123,7 +130,55 @@ dispatch(Choice) fn test(choice:Choice3) {
 }
 
 static fn choiceTest2(choice:Choice):String {
+  // the proper test function is dynamically dispatched here, depending on choice's specific subtype
   return "The result is: <<choice.test()>>";
+}
+
+// generic tree data structure
+struct TreeNode<Key implements IComparable<Key>, Value> {
+  var key:Key;
+  var value:Value;
+  var left:TreeNode;
+  var right:TreeNode;
+  // return value is an optional type - can be null
+  fn find(needle:Key):TreeNode? {
+    var result=needle.cmp(key);
+    // note the use of the optional chaining operator - this will return null if left is null
+    if(result<0) return left?.find(needle);
+    if(result>0) return right?.find(needle);
+    return this;
+  }
+}
+
+// static extension method
+static fn findNearest<Key implements IComparable<Key>,Value>(this:TreeNode<Key, Value>, needle:Key):TreeNode<Key,Value> {
+  var result=needle.cmp(key);
+  if(result<0) return left?left.find(needle):this;
+  if(result>0) return right?right.find(needle):this;
+  return this;
+}
+
+// method specialization (optimization for Strings that keeps track of the max character index compared so far)
+static fn findNearest<String,Value>(this:TreeNode<String, Value>, needle:String):TreeNode<String,Value> {
+  return this.findNearestHelper(needle);
+}
+static fn findNearestHelper<String,Value>(this:TreeNode<String, Value>, needle:String, fromCharIndex:Int=0):TreeNode<String,Value> {
+  if(fromCharIndex>=needle.length || fromCharIndex>=key.length) return this;
+  var result=needle.charAt(fromCharIndex)-key.charAt(fromCharIndex);
+  var minLength=min(needle.length, key.length);
+  while(minLength>fromCharIndex && needle.charAt(fromCharIndex)==key.charAt(fromCharIndex)) {
+    fromCharIndex+=1;
+  }
+  var result:Int = {
+    if(minLength>fromCharIndex) {
+      emit (fromCharIndex>needle.length ? -1 : 1);
+    } else {
+      emit (needle.charAt(fromCharIndex)<key.charAt(fromCharIndex)) ? -1 : 1;
+    }
+  }
+  if(result<0) return left?left.find(needle, fromCharIndex):this;
+  if(result>0) return right?right.find(needle, fromCharIndex):this;
+  return this;  
 }
 
 ```
