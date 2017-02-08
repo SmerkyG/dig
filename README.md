@@ -212,7 +212,7 @@ C++
 * Hideous lambda syntax with complex highly error-prone closure cleanup considerations
 * No null safety, not even a standardized way to easily tell if a pointer might be able to be null
 * Slow compile times unless you invest heavily in making your code fit very specific and limiting patterns (Dig emits C++ code that does not suffer from the problems that often lead to slow compilation)
-* Verbose - no null conditional operator (?.) etc
+* Verbose - very limited type inference, no null conditional operator (?.) etc
 * Macro system that results in error-prone hard to debug and hard to read code
 * Memory management is slow by default, and requires specialized implementations to be reasonable for large numbers of allocations
 * Difficult interoperability with garbage collected languages
@@ -242,7 +242,7 @@ Java
 * Type-erasure based generics do not allow many of the most desirable uses for generics
 * Slow runtime performance compared to systems languages
 * No multiline strings or string interpolation
-* Verbose - no null conditional operator (?.), no automatic casts based on comparisons, etc
+* Verbose - no type inference, no null conditional operator (?.), no automatic casts based on comparisons, etc
 * Difficult interoperability with systems languages and native libraries
 * Lack of support for static (or non-static) extension methods
 
@@ -265,3 +265,36 @@ Haxe
 * Lack of support for function overloading
 * Lack of support for partial specialization for generics
 * Widely varied target implementation quality (e.g. optional function parameters in C#)
+
+
+
+
+## Mechanisms
+
+The following implementation details are used to provide memory safety, cross-target compatibility, and other related features:
+
+* Object pooling for memory safety
+
+    The allocator working in tandem with the compiler take special care to ensure that no reference can ever lead to an object of a different type than was expected. This, in turn, allows us to know that all member accesses are also valid. Manually freeable objects are always allocated from object pools, which guarantees that they can never contain references to an object of the wrong type. When such an instance is freed, its contained pointers are zeroed or pointed to a special dummy object of the proper type, and it goes back into its pool's freelist. Null pointers are normally checked before access, but we may relax this rule while forcing such accesses to hit a reserved low region of memory that is protected.
+    
+    A sweeping garbage collector may optionally be run very slowly on all of memory (including manually freeable object pools) to determine which manually freeable objects may be automatically freed. This can help clean up infrequent exceptional cases such as when an exception is triggered during a constructor, cyclic reference counts, or certain kinds of closures.
+    
+    The user can clear entire object pools when they become entirely freed, or can explicitly make a call to compact certain object pools. Compacting the pools takes time but the marking operation is limited by the compiler to only search objects that can be in the reference graph of the pools in question, as determined by which types contain what types of references. 
+    
+    Manually freed objects CAN be accessed accidentally if references to them remain. There are compilation modes to help detect these errors, and even if they occur no reference can ever exist to data of the wrong type. Therefore, pointers are always safe.
+
+* Deferred reference counting
+
+    Deferred reference counting has a significantly cheaper amortized cost than traditional RC. It ignores pointers on the stack and defers actual incrementing an decrementing of counters until such time as a deferred collection is called by the user. This may be done on a thread or at specific moments, such as between rendering frames. The deferred collection process may be invoked partially or completely.
+    
+* Arrays
+
+    Arrays are currently always reference counted, since they are not well-suited to being object pooled and otherwise the user might quickly exhaust memory. This may change.
+
+* Managed Target Environments
+
+    Managed target environments use object pools to simulate manually freeable objects, similarly to how they are actually implemented on unmanaged targets like C++. Reference counted types are emulated via object pools and reference counts. Deferred reference counted types are gc'd.
+    
+* Value Types    
+    
+    Targets that do not inherently support Value types emulate Value types using multple stack variables and extra function parameters.
