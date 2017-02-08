@@ -8,7 +8,7 @@ The hope is that Dig will remove the requirement of choosing a language when cho
 
 ## Features
 * Simple recognizable syntax
-* Cross-compile to efficient C++, Java, C#, and more
+* Transpile to efficient C++, Java, C#, and more
 * Type inference system - strong type safety guarantees with less code
 * Lambda functions, with optional automatic inlining when passed as a function argument
 * Algebraic Data Types w/ direct support for Tagged Unions
@@ -51,6 +51,7 @@ The hope is that Dig will remove the requirement of choosing a language when cho
 ## Example code
 
 ```
+// 'struct' keyword is analagous to 'class'
 struct Example extends Foo implements Bar {
   // notice the implicit type of Slice<Int> for someInts
   var someInts = Slice<Int>();
@@ -102,6 +103,7 @@ struct Example extends Foo implements Bar {
   }
 }
 
+// a 'discriminated union' that can be one of several subtypes and knows its current subtype
 union Choice {
   Choice1,
   Choice2,
@@ -123,9 +125,9 @@ dispatch(Choice) fn test(choice:Choice1) "Chose 1"
 dispatch(Choice) fn test(choice:Choice2) "Chose 2"
 dispatch(Choice) fn test(choice:Choice3) {
   switch(value) {
-    case 0: "Chose 3 but had no apples";
-    case 1: "Chose 3 with one apple";
-    default: "Chose 3 with <<value>> apples";
+    case 0: return "Chose 3 but had no apples";
+    case 1: return "Chose 3 with one apple";
+    default: return "Chose 3 with <<value>> apples";
   }
 }
 
@@ -169,6 +171,8 @@ static fn findNearestHelper<String,Value>(this:TreeNode<String, Value>, needle:S
   while(minLength>fromCharIndex && needle.charAt(fromCharIndex)==key.charAt(fromCharIndex)) {
     fromCharIndex+=1;
   }
+  
+  // emit is a way to make expressions out of declarative statements like if, switch, etc. by having them emit values
   var result:Int = {
     if(minLength>fromCharIndex) {
       emit (fromCharIndex>needle.length ? -1 : 1);
