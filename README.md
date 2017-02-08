@@ -84,20 +84,53 @@ struct Example extends Foo implements Bar {
   // because of inlining, this generates the same efficient code as imperativeTest
   fn functionalTest() Range(1,11).map(factorial).reduce(operator_plus)
 
-  // rc means this type is reference-counted
-  rc struct InnerRefCounted {
+  // stack is the default modifier and means this type is allocated on the stack or included directly inside other types
+  struct SimpleStacked {
   }
-  // rc means this type is deferred-reference-counted
-  defer_rc struct InnerDeferRefCounted {
-    var other = InnerRefCounted();
+  // heap means this type is manually freed
+  heap struct Heaped {
+  }
+  // stack is the default modifier and means this type is allocated on the stack or included directly inside other types
+  stack struct Stacked {
+    var heaped = Heaped();
+    ~Stacked() {
+      delete heaped;
+    }
+  }
+  // rc means this type is reference-counted
+  rc struct RefCounted {
+    var stacked = Stacked();
+  }
+  // defer_rc means this type is deferred-reference-counted
+  defer_rc struct DeferRefCounted {
+    var other = RefCounted();
   }
   fn testRC() {
     {
-      var rcd = InnerRefCounted();
-      // rcd is freed here
+      var simpleStacked = SimpleStacked();
+      // simpleStacked is freed here
+    }
+    {
+      var heaped = Heaped();
+      delete heaped;
+      // heaped would be leaked here if we didn't delete it first
+    }
+    {
+      var stacked = Stacked();
+      // stacked is freed here, and its destructor is called, which frees its heaped member
+    }
+    {
+      var rcdRefCopy? = null;
+      {
+        var rcd = RefCounted();
+        rcdRefCopy = rcd; // rcd's reference count is now 2
+        // the original rcd is not freed here, since rcdRefCopy still holds a copy of its reference after rcd goes out of scope
+      }
+      // rcd is freed here since its reference count goes to zero
+      // stacked is implicitly freed from inside it, thereby calling stacked's destructor and freeing stacked's heaped member
     } 
     {
-      var drcd = InnerDeferRefCounted();
+      var drcd = DeferRefCounted();
       // drcd and its member 'other' are freed whenever we next ask the deferred refcounting service to test the stack
     }
   }
@@ -271,7 +304,97 @@ Haxe
 * Widely varied target implementation quality (e.g. optional function parameters in C#)
 
 
+## Basic Overview
 
+### Functions
+
+Functions require a list of parameters with types, as well as an explicit or implicit return type. If the return type is left blank, an implicit return type will be calculated from the function body. They can optionally be generic with respect to a set of parameterized types and type constraints. (see Generics) A function body can be contained within curly braces, or can be any expression.
+
+Lambdas can be declared anywhere using the same syntax as ordinary functions, but there also exists a simplified convenience syntax (TODO)
+
+Function definitions are specified via the following layout:
+
+    [static] [public|private|internal] fn yourFuncName [<GENERIC_TYPE_PARAMS>](arg0[:Arg0Type],arg1[:Arg1Type],...)[:ReturnType] [expression|{body}]
+
+Examples:
+
+    static fn foo() {}
+
+    private fn foo2<T implements IComparable<T>>(i:T,j:T):Boolean i < j 
+
+    public fn foo3(i:Int,j:Int,k:String) { if(i<j) return k; else return null; }
+
+### Type Classes
+
+Type classes are similar to those in other languages like C# or Java. They can be very lightweight, or support virtual dispatch and subclasses, and can represent either multiplicative ('struct') or additive ('union') algebraic data types. Note that 'struct' is similar to what some other languages call 'class'. Adding any override method to a subclass will result in all classes going up the inheritance tree to the ancestor with the overriden method obtaining vtables for virtual dispatch. Non-static non-virtual shadowing methods are not allowed.
+
+Unions support virtual dispatch using a special tagging mechanism. (TODO)
+
+Types specify how they will be allocated in memory via one of the following specifiers: stack, heap, rc, and defer_rc. Stack types are Value Types and obey value semantics during assignment, while all of the other allocation specifiers create Reference Types and their instances obey reference semantics during assignment.
+
+* stack allocation type 
+  Stack allocated types are allocated either on the stack or from the memory contained within another class layout that includes a variable of its type. They are not dynamically allocated from the heap. These are "Value Types" that obey value semantics when assigned or passed as function arguments. That is, they are copied, not referenced.
+* heap allocation type
+  Heap allocated types are dynamically allocated from the heap, and must be explicitly deleted or they will leak.
+* rc allocation type
+  RC allocated types are dynamically allocated from the heap and are reference-counted, being immediately deleted by the system when a given instance's reference count goes to zero.
+* defer_rc allocated types are dynamically allocated from the heap and employ deferred-reference-counting to determine when they are deleted. They will only be deleted when the deferred reference count checker is run. They take the least amortized time to calculate and update their reference counts, but deletion is not necessarily immediate upon a reference count becoming zero.
+
+Type definitions are specified via the following layout:
+
+    [stack|heap|rc|defer_rc] [[extern] struct|union|interface] yourTypeName [<GENERIC_TYPE_PARAMS>] [extends otherType] [implements otherType] {
+      [member]
+      [member]
+      ...
+    }
+    
+Examples:
+
+    struct Bar {
+      var x:Int;
+    }
+
+    interface SomeInterface {
+      fn foo():Int
+      fn foo2(b:Boolean):Void
+    }
+    
+    interface SomeInterface2<T> extends SomeInterface {
+      fn foo3(t:T):Boolean
+    }
+
+    heap struct Bar2 extends Bar2Parent implements SomeInterface2<Int> {
+      fn foo():Int { return 1; }
+      fn foo2(b:Boolean):Void {}
+      fn foo3(t:Int):Boolean t==0
+    }
+
+    heap struct Bar3 extends Bar2 {
+      override fn foo():Int { return 3; }
+    }
+
+    union Baz {
+      Option1,
+      Option2 {
+        var i:Int;
+        var bar2:Bar2;
+      },
+      Option3 {
+        var b:Boolean;
+      }
+    }
+
+### Generics
+
+Both types and functions can be generic with respect to a set of type parameters. Partial specialization is allowed.
+
+    [<template_param_0 [extends otherType] [implements otherType]>]
+
+### Built-In Types
+
+The only special built-in types are `Function<...>` and `Struct<T>`. The type for a given function consists of `Function` with type arguments corresponding to the function's argument types in order (including `this`), followed by the function's return type. For example, `fn baz(i:Int, j:Boolean):Void` would be of type `Function<Int, Boolean, Void`. Type classes are of type `Struct<T>` where T is the name of the type class itself. For example, the type class `struct Bar {}` would be of type `Struct<Bar>`.
+
+Basic types include `Void`, `Boolean`, `Int`, `String`, and `Array<T>`. These are all implemented via externs in the standard library. Other non-fundamental but important types such as `Slice<T>` are implemented in the standard library entirely in the Dig language itself without the use of externs.
 
 ## Mechanisms
 
