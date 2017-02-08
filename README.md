@@ -388,13 +388,50 @@ Examples:
 
 Both types and functions can be generic with respect to a set of type parameters. Partial specialization is allowed.
 
-    [<template_param_0 [extends otherType] [implements otherType]>]
+    [<template_param_name_0 [extends otherType] [implements otherType], ...>]
 
 ### Built-In Types
 
 The only special built-in types are `Function<...>` and `Struct<T>`. The type for a given function consists of `Function` with type arguments corresponding to the function's argument types in order (including `this`), followed by the function's return type. For example, `fn baz(i:Int, j:Boolean):Void` would be of type `Function<Int, Boolean, Void`. Type classes are of type `Struct<T>` where T is the name of the type class itself. For example, the type class `struct Bar {}` would be of type `Struct<Bar>`.
 
 Basic types include `Void`, `Boolean`, `Int`, `String`, and `Array<T>`. These are all implemented via externs in the standard library. Other non-fundamental but important types such as `Slice<T>` are implemented in the standard library entirely in the Dig language itself without the use of externs.
+
+### Member access and Universal Method Call (UMC) syntax
+
+Members are always accessed using the dot `.` specifier. (e.g. `var firstInitial = residence.owner.getName().charAt(0);`) Universal Method Call syntax may be used to access static functions (e.g. `fn lesser(i:Int,j:Int):Boolean i<j;` can be called like `var result=lesser(1,2);` or `var result=1.lesser(2);`)
+
+### Optional Types and Chaining
+
+Types may be marked as optional by adding a question mark immediately afterward. (e.g. `var x:MyType? = MyType(53);`) When an optional type has a member accessed, the result is always an optional type that depends on whether or not the left hand side was null.
+
+    var residence:Residence?;
+    var owner:Person? = residence.owner;
+    var name:String? = resdence.owner.getName();
+    var firstInitial:Char? = residence.owner.getName().charAt(0);
+    
+versus:
+
+    var residence:Residence;
+    var owner:Person = residence.owner; // assuming owner is not an optional type! 
+    var name:String = resdence.owner.getName(); // assuming getName does not return an optional type!
+    var firstInitial:Char = residence.owner.getName().charAt(0);
+    
+An optional type may be converted to a definite (non-optional) type by testing with an if statement. Anything within the scope of the if statement or after a return statement within the if will have the optionality casted away from the variable's type:
+
+    var residence:Residence?;
+    var owner1:Person? = residence.owner;
+    if(!(residence is null)) {
+        var owner2:Person = residence.owner; // assuming owner is not an optional type! 
+    }
+    if(residence is null) {
+      return;
+    }
+    var owner3:Person = residence.owner; // assuming owner is not an optional type!  
+
+You can also explicitly assert that a variable of an optional type is non-optional using an exclamation point, in which case if the type is in fact null a runtime error will occur. If no runtime error occurs, the remainder of the code will have the optionality casted away from the variable's type:
+
+    var residence:Residence?;
+    var owner:Person = residence!.owner;
 
 ## Mechanisms
 
