@@ -333,12 +333,17 @@ Unions support virtual dispatch using a special tagging mechanism. (TODO)
 Types specify how they will be allocated in memory via one of the following specifiers: stack, heap, rc, and defer_rc. Stack types are Value Types and obey value semantics during assignment, while all of the other allocation specifiers create Reference Types and their instances obey reference semantics during assignment.
 
 * stack allocation type 
+
   Stack allocated types are allocated either on the stack or from the memory contained within another class layout that includes a variable of its type. They are not dynamically allocated from the heap. These are "Value Types" that obey value semantics when assigned or passed as function arguments. That is, they are copied, not referenced.
 * heap allocation type
+
   Heap allocated types are dynamically allocated from the heap, and must be explicitly deleted or they will leak.
 * rc allocation type
+
   RC allocated types are dynamically allocated from the heap and are reference-counted, being immediately deleted by the system when a given instance's reference count goes to zero.
-* defer_rc allocated types are dynamically allocated from the heap and employ deferred-reference-counting to determine when they are deleted. They will only be deleted when the deferred reference count checker is run. They take the least amortized time to calculate and update their reference counts, but deletion is not necessarily immediate upon a reference count becoming zero.
+* defer_rc allocation type
+
+  defer_rc allocated types are dynamically allocated from the heap and employ deferred-reference-counting to determine when they are deleted. They will only be deleted when the deferred reference count checker is run. They take the least amortized time to calculate and update their reference counts, but deletion is not necessarily immediate upon a reference count becoming zero.
 
 Type definitions are specified via the following layout:
 
