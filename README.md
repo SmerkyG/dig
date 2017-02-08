@@ -4,7 +4,7 @@ Simple efficient and safe
 ## Rationale
 The goal is to provide a safe yet efficient portable alternative to C++, which is powerful yet easy to learn and use, and can cross compile to virtually any other language. This is accomplished by taking the best features from modern programming languages and combining them, while removing extraneous syntax and dangerous options.
 
-The hope is that Dig will remove the requirement of choosing a language when choosing a project. Just use Dig and later cross compile to anything you like. This lets you to reuse your code in the future on other products that may not even run in the same kind of environment. Write less code to get the same work done.
+The hope is that Dig will remove the requirement of choosing a language when choosing a project. Just use Dig and later transpile/cross-compile to anything you like. This lets you to reuse your code in the future on other products that may not even run in the same kind of environment. Write less code to get the same work done.
 
 ## Features
 * Simple recognizable syntax
