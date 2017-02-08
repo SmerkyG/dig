@@ -110,8 +110,8 @@ union Choice {
   Choice3 { var value:Int; }
 }
 
-static fn choiceTest(choice:Choice):String {
-  switch(choice) {
+static fn choiceTest(this:Choice):String {
+  switch(this) {
     case Choice1: return "Chose 1";
     case Choice2: return "Chose 2";
     case Choice3 where value==0: return "Chose 3 but had no apples";
@@ -121,9 +121,9 @@ static fn choiceTest(choice:Choice):String {
 }
 
 // alternative implementation
-dispatch(Choice) fn test(choice:Choice1) "Chose 1"
-dispatch(Choice) fn test(choice:Choice2) "Chose 2"
-dispatch(Choice) fn test(choice:Choice3) {
+dispatch(Choice) fn test(this:Choice1) "Chose 1"
+dispatch(Choice) fn test(this:Choice2) "Chose 2"
+dispatch(Choice) fn test(this:Choice3) {
   switch(value) {
     case 0: return "Chose 3 but had no apples";
     case 1: return "Chose 3 with one apple";
@@ -131,9 +131,9 @@ dispatch(Choice) fn test(choice:Choice3) {
   }
 }
 
-static fn choiceTest2(choice:Choice):String {
+static fn choiceTest2(this:Choice):String {
   // the proper test function is dynamically dispatched here, depending on choice's specific subtype
-  return "The result is: <<choice.test()>>";
+  return "The result is: <<this.test()>>";
 }
 
 // generic tree data structure
