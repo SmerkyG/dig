@@ -407,14 +407,12 @@ Types may be marked as optional by adding a question mark immediately afterward.
     var residence:Residence?;
     var owner:Person? = residence.owner;
     var name:String? = resdence.owner.getName();
-    var firstInitial:Char? = residence.owner.getName().charAt(0);
     
 versus:
 
     var residence:Residence;
     var owner:Person = residence.owner; // assuming owner is not an optional type! 
     var name:String = resdence.owner.getName(); // assuming getName does not return an optional type!
-    var firstInitial:Char = residence.owner.getName().charAt(0);
     
 An optional type may be converted to a definite (non-optional) type by testing with an if statement. Anything within the scope of the if statement or after a return statement within the if will have the optionality casted away from the variable's type:
 
@@ -428,10 +426,11 @@ An optional type may be converted to a definite (non-optional) type by testing w
     }
     var owner3:Person = residence.owner; // assuming owner is not an optional type!  
 
-You can also explicitly assert that a variable of an optional type is non-optional using an exclamation point, in which case if the type is in fact null a runtime error will occur. If no runtime error occurs, the remainder of the code will have the optionality casted away from the variable's type:
+You can also explicitly assert that a variable of an optional type is non-optional using an exclamation point, in which case if the type is in fact null a runtime error will occur. If no runtime error occurs, the remainder of the code in that scope will have the optionality casted away from the variable's type:
 
     var residence:Residence?;
     var owner:Person = residence!.owner;
+    var name:String = resdence.owner.getName(); // assuming getName does not return an optional type!
 
 ## Mechanisms
 
