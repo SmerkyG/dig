@@ -48,6 +48,10 @@ The hope is that Dig will remove the requirement of choosing a language when cho
 * Having to implement object pooling yourself in order to avoid hiccups in garbage collected environments for large numbers of objects
 * Major tradeoffs between ease of use and efficiency
 
+## Current Status
+
+Functioning IDE and prototype compiler that emits C++, missing several features including support for modules
+
 ## Example code
 
 ```
@@ -436,6 +440,17 @@ You can also explicitly assert that a variable of an optional type is non-option
     var residence:Residence?;
     var owner:Person = residence!.owner;
     var name:String = resdence.owner.getName(); // assuming getName does not return an optional type!
+
+### Variable Initialization
+
+Subclasses must always explicitly call one of their superclass's constructors via `super(...);` as their first statement. This may be accomplished indirectly, by calling an alternate constructor of the same subclass via `this(...);`. (TODO - the restriction to the first statement may be relaxed in a future version)
+
+Both member variables and local variables must always be initialized to values by the time they are used, or a compile-time error results.
+
+Constructors must initialize all member variables their type subclass before they are used or the constructor returns. This can be accomplished explicitly by the programmer, or implicitly either via a variable's initializer values (e.g. `var x=1;`) or a stack-type's no-arguments constructor (e.g. `var foo:Foo;` where Foo is a stack-type struct). An uninitialized member that has no no-arguments constructor will result in a compile-time error. 
+
+One exception is made for non-optional non-stack-type struct members, which do not have to be initialized for the constructor to compile. (e.g. `var bar:Bar;`) If you call a constructor that does not fully initialize these by the time it returns, the type returned from that constructor will be wrapped in a generic `IncompleteType`. (e.g. `var fooIncomplete:IncompleteObject<Foo> = Foo();`) All access to non-optional non-stack-type members of `IncompleteObject` are wrapped in a generic `Optional`. (e.g. `var member:Bar? = fooIncomplete.bar;`) Once the user has assigned values to all non-optional non-stack-type members, they can cast away the `IncompleteObject` wrapper, which will do a runtime check to ensure that all members are now known. (e.g. `var foo:Foo = foo as Foo;`) Further access to the complete version of the object can proceded as normal, with no extra Optional wrappers nor runtime checks in the way.
+
 
 ## Mechanisms
 
