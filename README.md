@@ -348,7 +348,8 @@ Types specify how they will be allocated in memory via one of the following spec
   
   Under the hood, lifecycle  allocated objects store a lifecycle index, which is incremented each time the object is deleted. Optional references to these objects also store an index. The two indices are checked for equality when casting from optional to definite, and will result in null if they mismatch. A debugging compiler option is available that detects access of mismatched lifecycle indices for definite references.
 
-* indirect allocation type 
+* indirect allocation type
+
   Indirect allocated types are dynamically allocated from the heap, and must be explicitly deleted or they will leak. Unlike direct heap allocated objects, all optional references to indirect allocated objects will immediately become null when their object is deleted. It is not possible to accidentally refer to a deleted object via an optional reference. As such, they are even safer to use than directly heap allocated types. Only optional references to indirect objects may be stored within non stack-allocated structs. Definite references to indirect objects may be stored on the stack or in stack allocated structs.
   
   Under the hood, optional references to these objects point (indirectly) to a separate pointer to the object, rather than pointing directly to the object itself (as a reference to a direct heap allocated object would). Definite references to indirect allocated objects point directly to the object and do not generate an implicit second lookup step.
