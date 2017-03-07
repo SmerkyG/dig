@@ -334,7 +334,7 @@ Type classes are similar to those in other languages like C# or Java. They can b
 
 Unions support virtual dispatch using a special tagging mechanism. (TODO)
 
-Types specify how they will be allocated in memory via one of the following specifiers: stack, heap, indirect_heap, rc, and defer_rc. Stack types are Value Types and obey value semantics during assignment, while all of the other allocation specifiers create Reference Types and their instances obey reference semantics during assignment.
+Types specify how they will be allocated in memory via one of the following specifiers: stack, heap, lc, indirect, rc, and defer_rc. Stack types are Value Types and obey value semantics during assignment, while all of the other allocation specifiers create Reference Types and their instances obey reference semantics during assignment.
 
 * stack allocation type 
 
