@@ -334,14 +334,27 @@ Type classes are similar to those in other languages like C# or Java. They can b
 
 Unions support virtual dispatch using a special tagging mechanism. (TODO)
 
-Types specify how they will be allocated in memory via one of the following specifiers: stack, heap, rc, and defer_rc. Stack types are Value Types and obey value semantics during assignment, while all of the other allocation specifiers create Reference Types and their instances obey reference semantics during assignment.
+Types specify how they will be allocated in memory via one of the following specifiers: stack, heap, indirect_heap, rc, and defer_rc. Stack types are Value Types and obey value semantics during assignment, while all of the other allocation specifiers create Reference Types and their instances obey reference semantics during assignment.
 
 * stack allocation type 
 
   Stack allocated types are allocated either on the stack or from the memory contained within another class layout that includes a variable of its type. They are not dynamically allocated from the heap. These are "Value Types" that obey value semantics when assigned or passed as function arguments. That is, they are copied, not referenced.
 * heap allocation type
 
-  Heap allocated types are dynamically allocated from the heap, and must be explicitly deleted or they will leak.
+  Heap allocated types are dynamically allocated from the heap, and must be explicitly deleted or they will leak. References to heap allocated objects that have been deleted are still valid, but may point to an unexpected object of the same type. This is because heap objects are reused once deleted via an object pool for the type. Optional references to deleted heap allocated objects do not become null. Safety is guaranteed in the sense that even the references held within a deleted object point to either null or a valid object of the reference's type. A debugging compiler option is available that keeps more information about object deletion and can detect most accidental accesses of deleted objects.
+* lc allocation type
+
+  Lifecycle allocated types are dynamically allocated from the heap, and must be explicitly deleted or they will leak. Unlike direct heap allocated objects, all optional references to lifecycle heap allocated objects will immediately become null when their object is deleted. It is not possible to accidentally refer to a deleted object via an optional reference. As such, they are even safer to use than directly heap allocated types. Definite references to lifecycle objects can never be stored within non stack-allocated types. Definite references to lifecycle objects may only be stored on the stack or in stack allocated types. 
+  
+  Under the hood, lifecycle  allocated objects store a lifecycle index, which is incremented each time the object is deleted. Optional references to these objects also store an index. The two indices are checked for equality when casting from optional to definite, and will result in null if they mismatch. A debugging compiler option is available that detects access of mismatched lifecycle indices for definite references.
+
+* indirect allocation type 
+  Indirect allocated types are dynamically allocated from the heap, and must be explicitly deleted or they will leak. Unlike direct heap allocated objects, all optional references to indirect allocated objects will immediately become null when their object is deleted. It is not possible to accidentally refer to a deleted object via an optional reference. As such, they are even safer to use than directly heap allocated types. Only optional references to indirect objects may be stored within non stack-allocated structs. Definite references to indirect objects may be stored on the stack or in stack allocated structs.
+  
+  Under the hood, optional references to these objects point (indirectly) to a separate pointer to the object, rather than pointing directly to the object itself (as a reference to a direct heap allocated object would). Definite references to indirect allocated objects point directly to the object and do not generate an implicit second lookup step.
+  
+  An additional but simple and infrequent cleanup step is required for indirect allocated types, because the indirectors themselves need to be marked as available before they can be reused. You can call `delete_indirectors<Foo>()` for a given type in order to recycle all indirectors, or `delete_indirector(myRef)` to recycle a specific individual indirector that is no longer expected to be accessed. Optional references to formerly deleted objects of this type are no longer guaranteed to be null after this call. In code for games and simulations, this is call is often made between simulation ticks.
+
 * rc allocation type
 
   RC allocated types are dynamically allocated from the heap and are reference-counted, being immediately deleted by the system when a given instance's reference count goes to zero.
@@ -351,7 +364,7 @@ Types specify how they will be allocated in memory via one of the following spec
 
 Type definitions are specified via the following layout:
 
-    [stack|heap|rc|defer_rc] [[extern] struct|union|interface] yourTypeName [<GENERIC_TYPE_PARAMS>] [extends otherType] [implements otherType] {
+    [stack|heap|indirect_heap|rc|defer_rc] [[extern] struct|union|interface] yourTypeName [<GENERIC_TYPE_PARAMS>] [extends otherType] [implements otherType] {
       [member]
       [member]
       ...
